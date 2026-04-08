@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Silence Drive | HideOut Cottages – Free Map Journey</title>
-    <!-- Leaflet CSS + JS (free, no key) -->
+    <title>The Silence Drive | Real Road Journey (OSRM)</title>
+    <!-- Leaflet CSS + JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Leaflet geometry utilities for smooth point interpolation -->
-    <script src="https://unpkg.com/leaflet-geometryutil@0.3.0/leaflet.geometryutil.js"></script>
     <style>
         * {
             margin: 0;
@@ -43,7 +41,6 @@
         }
         .hero p {
             font-size: 1.3rem;
-            font-weight: 300;
             background: rgba(0,0,0,0.4);
             backdrop-filter: blur(4px);
             padding: 0.6rem 1.8rem;
@@ -134,7 +131,7 @@
             font-style: italic;
         }
         .journey-spacer {
-            height: 200vh;
+            height: 250vh;  /* controls scroll speed – adjust as you like */
             width: 100%;
             background: transparent;
         }
@@ -183,8 +180,8 @@
     <h1>The Silence Drive</h1>
     <p>by HideOut Cottages, Kulamavu, Idukki</p>
     <div class="scroll-hint">
-        <span>⬇ Scroll to travel the real route ⬇</span>
-        <span style="font-size: 0.75rem;">✦ open street map • no API key needed ✦</span>
+        <span>⬇ Scroll to drive real hill roads ⬇</span>
+        <span style="font-size: 0.75rem;">✦ OSRM real route • curves & turns ✦</span>
     </div>
 </div>
 
@@ -210,7 +207,7 @@
 
 <script>
     (function() {
-        // ---------- EXACT LOCATIONS (in order) with realistic coordinates ----------
+        // ---------- LOCATIONS in order (exact coordinates) ----------
         const locations = [
             { name: "HideOut Cottages", line: "Where the journey begins", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" },
             { name: "Kozhipally", line: "Where the valley whispers", lat: 9.8265, lng: 76.8612, img: "https://picsum.photos/id/15/200/200" },
@@ -224,8 +221,9 @@
             { name: "Triveni", line: "Confluence of peace", lat: 9.9820, lng: 76.7620, img: "https://picsum.photos/id/66/200/200" },
             { name: "Back to HideOut", line: "Journey returns home • loop complete", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" }
         ];
-        
+
         const totalStops = locations.length;
+        // Milestones (0..1) – each stop gets a scroll percentage
         const milestones = [];
         for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
 
@@ -239,8 +237,8 @@
         let triggeredStops = new Array(totalStops).fill(false);
         let currentProgress = 0;
         let map, polyline, travelerMarker, stopMarkers = [];
-        let routeLatLngs = [];
-        let routeLength = 0;
+        let routeCoords = [];          // array of [lat, lng] for the full real road
+        let routeLength = 0;           // total distance in meters
         let animationFrameId = null;
 
         // ---------- AUDIO ----------
@@ -280,8 +278,44 @@
         window.addEventListener('touchstart', unlockAudio);
         window.addEventListener('scroll', unlockAudio, { once: true });
 
-        // ----- MAP INIT (Leaflet + OpenStreetMap) -----
-        function initMap() {
+        // ---------- OSRM REAL ROUTING (FREE, NO API KEY) ----------
+        // Fetch route between two points (lat,lng) and return GeoJSON linestring coordinates
+        async function fetchRoute(start, end) {
+            const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.code !== "Ok") throw new Error("OSRM route error");
+            // data.routes[0].geometry.coordinates is array of [lng, lat]
+            return data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        }
+
+        // Fetch full route by concatenating segments between consecutive locations
+        async function getFullRealRoute() {
+            let fullCoords = [];
+            for (let i = 0; i < locations.length - 1; i++) {
+                const start = { lat: locations[i].lat, lng: locations[i].lng };
+                const end = { lat: locations[i+1].lat, lng: locations[i+1].lng };
+                try {
+                    const segment = await fetchRoute(start, end);
+                    // Avoid duplicate points at junctions
+                    if (fullCoords.length === 0) fullCoords.push(...segment);
+                    else fullCoords.push(...segment.slice(1));
+                } catch(e) {
+                    console.warn(`Failed to fetch route between ${locations[i].name} and ${locations[i+1].name}`, e);
+                    // fallback to straight line (should not happen)
+                    const line = [
+                        [start.lat, start.lng],
+                        [end.lat, end.lng]
+                    ];
+                    if (fullCoords.length === 0) fullCoords.push(...line);
+                    else fullCoords.push(...line.slice(1));
+                }
+            }
+            return fullCoords;
+        }
+
+        // ---------- MAP INITIALIZATION ----------
+        async function initMap() {
             map = L.map('map').setView([9.88, 76.82], 11);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
@@ -290,17 +324,31 @@
                 minZoom: 8
             }).addTo(map);
 
-            // Build route from coordinates (straight lines between stops – looks like roads)
-            routeLatLngs = locations.map(loc => [loc.lat, loc.lng]);
-            polyline = L.polyline(routeLatLngs, { color: '#c0ff8f', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
-            
-            // Calculate total route distance in meters for accurate interpolation
-            routeLength = 0;
-            for (let i = 1; i < routeLatLngs.length; i++) {
-                routeLength += map.distance(routeLatLngs[i-1], routeLatLngs[i]);
+            // Show loading message (optional)
+            map.getContainer().style.cursor = 'wait';
+
+            // 1. Get real road geometry
+            routeCoords = await getFullRealRoute();
+            if (!routeCoords.length) {
+                alert("Failed to load route. Please refresh.");
+                return;
             }
-            
-            // Add red circular markers for each stop
+
+            // 2. Draw polyline
+            polyline = L.polyline(routeCoords, {
+                color: '#c0ff8f',
+                weight: 5,
+                opacity: 0.9,
+                lineJoin: 'round'
+            }).addTo(map);
+
+            // 3. Calculate total route length (meters)
+            routeLength = 0;
+            for (let i = 1; i < routeCoords.length; i++) {
+                routeLength += map.distance(routeCoords[i-1], routeCoords[i]);
+            }
+
+            // 4. Add red markers for each location (exact coordinates)
             locations.forEach((loc, idx) => {
                 const marker = L.circleMarker([loc.lat, loc.lng], {
                     radius: 9,
@@ -312,55 +360,52 @@
                 marker.bindTooltip(loc.name, { permanent: false, direction: 'top', offset: [0, -10] });
                 stopMarkers.push(marker);
             });
-            
-            // Create custom traveler marker (glowing diamond/circle)
+
+            // 5. Create traveler marker (jeep)
             const travelerIcon = L.divIcon({
                 className: 'traveler-marker',
                 iconSize: [26, 26],
                 html: '<div style="width:100%;height:100%;background:#ffde9c;border-radius:50%;box-shadow:0 0 15px #ffb347;"></div>'
             });
-            travelerMarker = L.marker(routeLatLngs[0], { icon: travelerIcon }).addTo(map);
-            
-            // Fit map to show full route with padding
+            travelerMarker = L.marker(routeCoords[0], { icon: travelerIcon }).addTo(map);
+
+            // 6. Fit map bounds
             map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+            map.getContainer().style.cursor = '';
         }
-        
-        // Get point along polyline by fraction (0 to 1) using distance interpolation
+
+        // Get point along the real road polyline by fraction (0..1)
         function getPointAtFraction(fraction) {
-            if (!polyline || routeLatLngs.length < 2) return routeLatLngs[0];
-            const totalDist = routeLength;
-            const targetDist = fraction * totalDist;
+            if (!routeCoords.length) return routeCoords[0];
+            const targetDist = fraction * routeLength;
             let accumulated = 0;
-            for (let i = 1; i < routeLatLngs.length; i++) {
-                const segDist = map.distance(routeLatLngs[i-1], routeLatLngs[i]);
+            for (let i = 1; i < routeCoords.length; i++) {
+                const segDist = map.distance(routeCoords[i-1], routeCoords[i]);
                 if (targetDist <= accumulated + segDist) {
                     const t = (targetDist - accumulated) / segDist;
-                    const lat = routeLatLngs[i-1][0] + (routeLatLngs[i][0] - routeLatLngs[i-1][0]) * t;
-                    const lng = routeLatLngs[i-1][1] + (routeLatLngs[i][1] - routeLatLngs[i-1][1]) * t;
+                    const lat = routeCoords[i-1][0] + (routeCoords[i][0] - routeCoords[i-1][0]) * t;
+                    const lng = routeCoords[i-1][1] + (routeCoords[i][1] - routeCoords[i-1][1]) * t;
                     return [lat, lng];
                 }
                 accumulated += segDist;
             }
-            return routeLatLngs[routeLatLngs.length - 1];
+            return routeCoords[routeCoords.length - 1];
         }
-        
-        // Update traveler marker based on scroll progress
+
+        // Move traveler and update popup triggers
         function updateTraveler(progress) {
-            if (!travelerMarker) return;
+            if (!travelerMarker || !routeCoords.length) return;
             const point = getPointAtFraction(progress);
             travelerMarker.setLatLng(point);
-            // Smooth map pan to keep traveler near center (optional)
             if (progress > 0.02 && progress < 0.98) {
                 map.panTo(point, { animate: false, duration: 0.1 });
             }
         }
-        
-        // Trigger popup & sound at each stop (based on progress thresholds)
+
         function checkStopTriggers(progress) {
             for (let i = 0; i < milestones.length; i++) {
                 if (!triggeredStops[i] && progress >= milestones[i]) {
                     triggeredStops[i] = true;
-                    // Update popup with location image & text
                     popupLocationSpan.innerText = locations[i].name;
                     popupTaglineSpan.innerText = locations[i].line;
                     popupImage.src = locations[i].img;
@@ -369,14 +414,12 @@
                     void popupCard.offsetWidth;
                     popupCard.classList.add('active');
                     
-                    // Play ting sound
                     if (audioCtx && audioCtx.state === 'running') playTing();
                     else if (audioAllowed) playTing();
                     else if (audioCtx && audioCtx.state === 'suspended') {
                         audioCtx.resume().then(() => playTing()).catch(e=>{});
                     }
                     
-                    // Flash the red marker
                     if (stopMarkers[i]) {
                         const marker = stopMarkers[i];
                         marker.setStyle({ radius: 14, fillColor: '#ff7777' });
@@ -385,8 +428,8 @@
                 }
             }
         }
-        
-        // ---------- SCROLL PROGRESS (200vh spacer gives fast, responsive journey) ----------
+
+        // Scroll progress (based on spacer)
         function updateScrollProgress() {
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
@@ -406,31 +449,27 @@
                 checkStopTriggers(currentProgress);
             });
         }
-        
+
         window.addEventListener('scroll', updateScrollProgress);
         window.addEventListener('resize', () => {
             if (map) map.invalidateSize();
             updateScrollProgress();
         });
-        
-        // Initialize map after page load
-        window.addEventListener('load', () => {
-            initMap();
-            setTimeout(() => {
-                updateTraveler(0);
-                updateScrollProgress();
-            }, 200);
+
+        // Start everything
+        window.addEventListener('load', async () => {
+            await initMap();
+            updateScrollProgress();
         });
-        
+
         const planBtn = document.getElementById('planRideBtn');
         if (planBtn) {
             planBtn.addEventListener('click', () => {
                 alert("✨ Plan your real silence drive at HideOut Cottages, Kulamavu. Contact: +91 99999 00000 ✨");
             });
         }
-        
+
         initAudio();
-        triggeredStops.fill(false);
     })();
 </script>
 </body>
