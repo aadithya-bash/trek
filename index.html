@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Silence Drive Map</title>
+  <title>Silence Drive</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<style>
-body { margin:0; background:#0f2e2e; }
-
-#map {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-}
-
-.spacer {
-    height: 400vh;
-}
-</style>
+  <style>
+    body { margin:0; background:#0f2e2e; }
+    #map {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .spacer {
+      height: 400vh;
+    }
+  </style>
 </head>
 
 <body>
@@ -27,40 +23,75 @@ body { margin:0; background:#0f2e2e; }
 <div class="spacer"></div>
 
 <script>
+let map, routePath = [], jeepMarker;
 
-// Initialize map
-var map = L.map('map').setView([9.85, 76.9], 11);
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 12,
+    center: { lat: 9.85, lng: 76.9 },
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#0f2e2e" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#d6f5d6" }] }
+    ]
+  });
 
-// Tile
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  const directionsService = new google.maps.DirectionsService();
 
-// ROUTE COORDINATES (approx — replace with accurate ones later)
-const route = [
-    [9.866, 76.885], // Kozhipally
-    [9.850, 76.900], // Naliyani
-    [9.830, 76.880], // Kanjar
-    [9.820, 76.870], // Olikkayam
-    [9.800, 76.860], // Ilaveezhapoonchira
-    [9.790, 76.855],
-    [9.780, 76.860],
-    [9.770, 76.870],
-    [9.760, 76.880],
-    [9.850, 76.920]  // Hideout
-];
+  directionsService.route({
+    origin: "HideOut Cottages Kulamavu",
+    destination: "HideOut Cottages Kulamavu",
+    waypoints: [
+      { location: "Kozhipally Idukki" },
+      { location: "Naliyani Idukki" },
+      { location: "Kanjar Kerala" },
+      { location: "Olikkayam Waterfalls" },
+      { location: "Ilaveezhapoonchira" },
+      { location: "Ilaveezhapoonchira Lake" },
+      { location: "S Valavu Elappally" },
+      { location: "Ulupuni Idukki" },
+      { location: "Triveni Moolamattom" }
+    ],
+    travelMode: "DRIVING"
+  }, (result, status) => {
 
-// Draw route
-var polyline = L.polyline(route, {color: 'lime'}).addTo(map);
+    if (status === "OK") {
+      const route = result.routes[0].overview_path;
 
-// Jeep marker
-var jeep = L.marker(route[0]).addTo(map);
+      routePath = route;
 
-// Scroll animation
+      new google.maps.Polyline({
+        path: route,
+        map: map,
+        strokeColor: "#00ff88",
+        strokeWeight: 4
+      });
+
+      jeepMarker = new google.maps.Marker({
+        position: route[0],
+        map: map,
+        icon: {
+          url: "https://img.icons8.com/emoji/48/jeep-emoji.png",
+          scaledSize: new google.maps.Size(40, 40)
+        }
+      });
+    }
+  });
+}
+
+window.onload = initMap;
+
+// SCROLL ANIMATION
 window.addEventListener("scroll", () => {
-    let progress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-    let index = Math.floor(progress * (route.length - 1));
-    jeep.setLatLng(route[index]);
-});
+  if (!routePath.length) return;
 
+  let progress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+
+  let index = Math.floor(progress * (routePath.length - 1));
+
+  jeepMarker.setPosition(routePath[index]);
+
+  map.panTo(routePath[index]);
+});
 </script>
 
 </body>
