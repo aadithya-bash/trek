@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Silence Drive | HideOut Cottages – Cinematic Photo Journey</title>
+    <title>The Silence Drive | HideOut Cottages – Curvy Full‑Width Journey</title>
     <style>
         * {
             margin: 0;
@@ -18,6 +18,7 @@
             color: #eef5e2;
         }
 
+        /* INTRO SECTION */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -66,6 +67,7 @@
             100% { transform: translateY(12px); opacity: 1; }
         }
 
+        /* JOURNEY WRAPPER */
         .journey-wrapper {
             position: relative;
             background: #021005;
@@ -99,6 +101,7 @@
             filter: drop-shadow(0 0 6px #96f06e40);
         }
 
+        /* Main curvy road */
         .road-path {
             stroke: #c0ff8f;
             stroke-width: 6;
@@ -120,50 +123,48 @@
             opacity: 0.3;
         }
 
+        /* Red location markers */
         .location-marker {
             fill: #ff3a3a;
             stroke: #ffc107;
-            stroke-width: 2.5;
-            filter: drop-shadow(0 0 5px #ff5e00);
+            stroke-width: 2;
+            filter: drop-shadow(0 0 4px #ff0000);
             transition: r 0.2s ease;
             cursor: pointer;
         }
 
+        /* moving indicator (location bar / diamond) */
         .traveler {
-            fill: #ffecb3;
+            fill: #ffde9c;
             stroke: #ffb347;
             stroke-width: 2;
-            filter: drop-shadow(0 0 12px #ffb347);
+            filter: drop-shadow(0 0 10px #ffb347);
+            transition: all 0.05s linear;
         }
 
         .traveler-glow {
             fill: #ffb347;
-            opacity: 0.7;
+            opacity: 0.6;
         }
 
-        /* Popup with image */
+        /* POPUP CARD */
         .popup-card {
             position: fixed;
-            bottom: 10%;
+            bottom: 12%;
             left: 50%;
-            transform: translateX(-50%) scale(0.9);
-            background: rgba(12, 25, 10, 0.95);
+            transform: translateX(-50%) scale(0.92);
+            background: rgba(12, 28, 10, 0.9);
             backdrop-filter: blur(20px);
-            border-radius: 32px;
-            padding: 1rem 1.8rem;
+            border-radius: 48px;
+            padding: 1rem 2rem;
             text-align: center;
             border: 1px solid rgba(200, 255, 140, 0.7);
-            box-shadow: 0 25px 40px -12px black;
+            box-shadow: 0 20px 35px -8px black;
             z-index: 50;
             transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
             opacity: 0;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            min-width: 260px;
-            max-width: 320px;
+            white-space: nowrap;
         }
 
         .popup-card.active {
@@ -171,38 +172,27 @@
             transform: translateX(-50%) scale(1);
         }
 
-        .popup-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #c7ff96;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .popup-text {
-            text-align: center;
-        }
-
         .popup-card .location {
-            font-size: 1.6rem;
+            font-size: 2rem;
             font-weight: 700;
             color: #f9ffdb;
         }
 
         .popup-card .tagline {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #ceffaa;
-            margin-top: 4px;
+            margin-top: 6px;
             font-style: italic;
         }
 
+        /* SPACER (faster scroll experience - 200vh only) */
         .journey-spacer {
             height: 200vh;
             width: 100%;
             background: transparent;
         }
 
+        /* FINAL SECTION */
         .final-section {
             min-height: 100vh;
             display: flex;
@@ -241,16 +231,9 @@
         }
 
         @media (max-width: 700px) {
-            .popup-card { width: 85%; padding: 0.8rem; bottom: 8%; }
-            .popup-card .location { font-size: 1.3rem; }
-            .popup-img { width: 60px; height: 60px; }
+            .popup-card { white-space: normal; width: 80%; padding: 0.8rem 1rem; bottom: 8%; }
+            .popup-card .location { font-size: 1.5rem; }
             .road-path { stroke-width: 4; }
-        }
-
-        @keyframes pulseRed {
-            0% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
-            50% { r: 18px; fill: #ff7777; stroke-width: 4; }
-            100% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
         }
     </style>
 </head>
@@ -261,7 +244,7 @@
     <p>by HideOut Cottages, Kulamavu, Idukki</p>
     <div class="scroll-hint">
         <span>⬇ Scroll to begin the journey ⬇</span>
-        <span style="font-size: 0.75rem;">✦ winding route • photo memories ✦</span>
+        <span style="font-size: 0.75rem;">✦ full‑width curvy route • red markers ✦</span>
     </div>
 </div>
 
@@ -269,6 +252,7 @@
     <div class="sticky-road">
         <div class="road-svg-container">
             <svg viewBox="0 0 1400 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Definition for marker arrow (not used, just for style) -->
                 <defs>
                     <filter id="glow">
                         <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -279,7 +263,7 @@
                     </filter>
                 </defs>
                 
-                <!-- thick background glow -->
+                <!-- Thick glowing underlay -->
                 <path id="roadGlow" class="glow-bg" d="
                     M 100 120 
                     C 300 100, 400 200, 600 180
@@ -292,7 +276,7 @@
                     C 1000 730, 1150 780, 1300 740
                 " />
                 
-                <!-- main curvy road -->
+                <!-- Main curvy, winding road (full width, lots of character) -->
                 <path id="roadPath" class="road-path" d="
                     M 100 120 
                     C 300 100, 400 200, 600 180
@@ -305,13 +289,16 @@
                     C 1000 730, 1150 780, 1300 740
                 " />
                 
-                <!-- red markers container -->
+                <!-- RED MARKERS (precisely placed at 10 stops along the path) -->
+                <!-- We'll position them using known length percentages. 
+                     Since we know the total path length from JS, we'll dynamically place markers.
+                     For static fallback, we add them, but JS will reposition accurately. -->
                 <g id="markersGroup"></g>
                 
-                <!-- moving diamond (location bar) -->
+                <!-- Moving indicator: a glowing diamond (location bar) -->
                 <g id="travelerGroup">
-                    <polygon points="0,-18 12,0 0,18 -12,0" class="traveler" />
-                    <circle cx="0" cy="0" r="10" class="traveler-glow" />
+                    <polygon points="0,-14 10,0 0,14 -10,0" class="traveler" />
+                    <circle cx="0" cy="0" r="8" class="traveler-glow" />
                 </g>
             </svg>
         </div>
@@ -325,49 +312,54 @@
 </div>
 
 <div id="popupCard" class="popup-card">
-    <img id="popupImage" class="popup-img" src="" alt="location view">
-    <div class="popup-text">
-        <div class="location" id="popupLocation">Kulamavu</div>
-        <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
-    </div>
+    <div class="location" id="popupLocation">Kulamavu</div>
+    <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
 </div>
 
 <script>
     (function() {
-        // Locations with unique images (using high-quality nature pics from picsum with fixed seeds)
+        // ---------- LOCATIONS (10 iconic stops) ----------
         const locations = [
-            { name: "Kulamavu", line: "Where the water meets stillness", img: "https://picsum.photos/id/104/200/200" },     // lake
-            { name: "Nadukani", line: "Clouds brush the mountain spine", img: "https://picsum.photos/id/104/200/200" },    // mountain
-            { name: "Kozhippalli", line: "Echoes of forgotten trails", img: "https://picsum.photos/id/15/200/200" },       // forest path
-            { name: "Naliyani", line: "Mist & monsoon dreams", img: "https://picsum.photos/id/96/200/200" },               // misty
-            { name: "Kanjar", line: "The wild fern corridor", img: "https://picsum.photos/id/127/200/200" },               // fern
-            { name: "Ilaveezhapunchira", line: "Where the sky rests on the hills", img: "https://picsum.photos/id/29/200/200" }, // hill sky
-            { name: "Ulupuni", line: "Silence drips from every leaf", img: "https://picsum.photos/id/42/200/200" },         // rainy leaf
-            { name: "Ashramam", line: "Pathway to inner calm", img: "https://picsum.photos/id/88/200/200" },               // temple
-            { name: "Moolamattom", line: "The power of earth's heart", img: "https://picsum.photos/id/24/200/200" },       // river
-            { name: "Back to HideOut", line: "Journey returns home • loop complete", img: "https://picsum.photos/id/169/200/200" } // cottage
+            { name: "Kulamavu", line: "Where the water meets stillness" },
+            { name: "Nadukani", line: "Clouds brush the mountain spine" },
+            { name: "Kozhippalli", line: "Echoes of forgotten trails" },
+            { name: "Naliyani", line: "Mist & monsoon dreams" },
+            { name: "Kanjar", line: "The wild fern corridor" },
+            { name: "Ilaveezhapunchira", line: "Where the sky rests on the hills" },
+            { name: "Ulupuni", line: "Silence drips from every leaf" },
+            { name: "Ashramam", line: "Pathway to inner calm" },
+            { name: "Moolamattom", line: "The power of earth's heart" },
+            { name: "Back to HideOut", line: "Journey returns home • loop complete" }
         ];
         const totalStops = locations.length;
+        // milestones evenly spaced along the path (0 to 1)
         const milestones = [];
-        for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
+        for (let i = 0; i < totalStops; i++) {
+            milestones.push(i / (totalStops - 1));
+        }
 
         // DOM elements
         const svgPathElem = document.getElementById('roadPath');
         const travelerGroup = document.getElementById('travelerGroup');
         const markersGroup = document.getElementById('markersGroup');
         const wrapper = document.querySelector('.journey-wrapper');
+        const stickyRoad = document.querySelector('.sticky-road');
         const popupCard = document.getElementById('popupCard');
         const popupLocationSpan = document.getElementById('popupLocation');
         const popupTaglineSpan = document.getElementById('popupTagline');
-        const popupImage = document.getElementById('popupImage');
 
+        // State
         let triggeredStops = new Array(totalStops).fill(false);
         let currentProgress = 0;
         let pathLength = 0;
+        let svgRect = null;
+        let containerRect = null;
         let animationFrameId = null;
+        
+        // Marker elements array (to store circles)
         let markerCircles = [];
 
-        // ---------- AUDIO (soft ting) ----------
+        // ---------- AUDIO (soft "ting") ----------
         let audioCtx = null;
         let audioAllowed = false;
 
@@ -404,24 +396,45 @@
         window.addEventListener('touchstart', unlockAudio);
         window.addEventListener('scroll', unlockAudio, { once: true });
 
-        // ----- PATH LENGTH & MARKERS (pure viewBox coordinates) -----
+        // ----- PATH LENGTH & MEASUREMENTS -----
         function getPathLength() {
             if (svgPathElem) pathLength = svgPathElem.getTotalLength();
         }
 
-        // Create red markers at each milestone (viewBox coordinates)
+        function refreshMeasurements() {
+            getPathLength();
+            const svgElem = document.querySelector('.road-svg-container svg');
+            if (svgElem) svgRect = svgElem.getBoundingClientRect();
+            if (stickyRoad) containerRect = stickyRoad.getBoundingClientRect();
+            updateMarkersPosition(); // reposition red markers after resize
+        }
+
+        // Create / update red markers at exact stop positions along the path
         function updateMarkersPosition() {
-            if (!svgPathElem || !pathLength) return;
-            markersGroup.innerHTML = '';
+            if (!svgPathElem || !pathLength || !svgRect || !containerRect) return;
+            markersGroup.innerHTML = ''; // clear old markers
             markerCircles = [];
+            
+            const viewBoxW = 1400, viewBoxH = 800;
+            const scaleX = svgRect.width / viewBoxW;
+            const scaleY = svgRect.height / viewBoxH;
+            
             for (let i = 0; i < milestones.length; i++) {
-                const point = svgPathElem.getPointAtLength(milestones[i] * pathLength);
+                const progress = milestones[i];
+                const point = svgPathElem.getPointAtLength(progress * pathLength);
+                // convert to SVG coordinates (already relative to viewBox)
+                const cx = point.x;
+                const cy = point.y;
+                
+                // create circle element
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", point.x);
-                circle.setAttribute("cy", point.y);
-                circle.setAttribute("r", "14");
+                circle.setAttribute("cx", cx);
+                circle.setAttribute("cy", cy);
+                circle.setAttribute("r", "12");
                 circle.setAttribute("class", "location-marker");
                 circle.setAttribute("data-stop", i);
+                // add a subtle pulse animation via CSS
+                circle.style.filter = "drop-shadow(0 0 6px #ff5e5e)";
                 markersGroup.appendChild(circle);
                 markerCircles.push(circle);
             }
@@ -429,12 +442,14 @@
 
         // Update traveler (diamond) position and rotation
         function updateTraveler(progress) {
-            if (!svgPathElem || !pathLength) return;
+            if (!svgPathElem || !pathLength || !svgRect || !containerRect) return;
             const clamped = Math.min(1, Math.max(0, progress));
             const point = svgPathElem.getPointAtLength(clamped * pathLength);
+            
+            // Move the traveler group to that point
             travelerGroup.setAttribute("transform", `translate(${point.x}, ${point.y})`);
             
-            // rotation based on path direction
+            // Optional: rotation based on path direction
             let angle = 0;
             if (clamped < 0.99) {
                 const nextT = Math.min(1, clamped + 0.02);
@@ -451,41 +466,39 @@
                 const dy = p2.y - p1.y;
                 angle = Math.atan2(dy, dx) * 180 / Math.PI;
             }
-            travelerGroup.style.transform = `rotate(${angle + 45}deg)`;
+            travelerGroup.style.transform = `rotate(${angle + 45}deg)`; // diamond orientation
         }
 
-        // Trigger popup, sound, marker flash
+        // Trigger popups + sound at each stop (robust)
         function checkStopTriggers(progress) {
             for (let i = 0; i < milestones.length; i++) {
                 if (!triggeredStops[i] && progress >= milestones[i]) {
                     triggeredStops[i] = true;
-                    // update popup content with image
+                    // update popup
                     popupLocationSpan.innerText = locations[i].name;
                     popupTaglineSpan.innerText = locations[i].line;
-                    popupImage.src = locations[i].img;
-                    popupImage.alt = locations[i].name;
                     popupCard.classList.remove('active');
                     void popupCard.offsetWidth;
                     popupCard.classList.add('active');
                     
-                    // play sound
+                    // play ting sound
                     if (audioCtx && audioCtx.state === 'running') playTing();
                     else if (audioAllowed) playTing();
                     else if (audioCtx && audioCtx.state === 'suspended') {
                         audioCtx.resume().then(() => playTing()).catch(e=>{});
                     }
                     
-                    // flash marker
+                    // optional: flash the corresponding red marker
                     if (markerCircles[i]) {
                         markerCircles[i].style.animation = "none";
                         markerCircles[i].offsetHeight;
-                        markerCircles[i].style.animation = "pulseRed 0.35s ease-in-out 2";
+                        markerCircles[i].style.animation = "pulseRed 0.3s ease-in-out 2";
                     }
                 }
             }
         }
 
-        // ---------- SCROLL PROGRESS (reliable, fast 200vh) ----------
+        // ---------- SCROLL PROGRESS (faster experience: spacer 200vh) ----------
         function updateScrollProgress() {
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
@@ -498,55 +511,65 @@
                 progress = scrolled / totalScrollable;
                 progress = Math.min(1, Math.max(0, progress));
             }
+            
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             animationFrameId = requestAnimationFrame(() => {
-                if (pathLength === 0) {
-                    getPathLength();
-                    updateMarkersPosition();
-                }
+                if (pathLength === 0) refreshMeasurements();
                 currentProgress = progress;
                 updateTraveler(currentProgress);
                 checkStopTriggers(currentProgress);
             });
         }
 
-        // Resize handling: re-measure path and reposition markers
-        function handleResize() {
-            getPathLength();
-            updateMarkersPosition();
-            updateTraveler(currentProgress);
-        }
-
+        // Events
         window.addEventListener('scroll', updateScrollProgress);
         window.addEventListener('resize', () => {
-            setTimeout(handleResize, 80);
+            refreshMeasurements();
+            updateScrollProgress();
         });
 
         // Initialization
         function initialize() {
-            getPathLength();
-            updateMarkersPosition();
+            refreshMeasurements();  // sets pathLength, svgRect, creates markers
             updateTraveler(0);
             triggeredStops.fill(false);
             popupCard.classList.remove('active');
             currentProgress = 0;
-            // ensure first popup doesn't appear until scroll
+            // extra safety: re-run after a short delay for accurate SVG bounding
             setTimeout(() => {
-                handleResize();
-            }, 120);
+                refreshMeasurements();
+                updateTraveler(0);
+            }, 150);
         }
-
+        
+        // Button action
         const planBtn = document.getElementById('planRideBtn');
         if (planBtn) {
             planBtn.addEventListener('click', () => {
                 alert("✨ Plan your real silence drive at HideOut Cottages, Kulamavu. Contact: +91 99999 00000 ✨");
             });
         }
-
+        
+        // Add keyframe animation for red marker pulse
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            @keyframes pulseRed {
+                0% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
+                50% { r: 18px; fill: #ff7777; stroke-width: 4; }
+                100% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
+            }
+            .location-marker {
+                transition: r 0.1s;
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        
         initAudio();
         initialize();
         window.addEventListener('load', () => {
-            handleResize();
+            refreshMeasurements();
+            updateTraveler(currentProgress);
         });
     })();
 </script>
