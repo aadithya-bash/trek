@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Silence Drive | HideOut Cottages – Real Route Journey</title>
+    <title>The Silence Drive | HideOut Cottages – Your Real Route</title>
     
     <!-- Leaflet CSS + JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -211,8 +211,8 @@
     <h1>The Silence Drive</h1>
     <p>by HideOut Cottages, Kulamavu, Idukki</p>
     <div class="scroll-hint">
-        <span>⬇ Scroll to travel the real route ⬇</span>
-        <span style="font-size: 0.75rem;">✦ 10 sacred stops • winding roads • photo memories ✦</span>
+        <span>⬇ Scroll to travel your exact route ⬇</span>
+        <span style="font-size: 0.75rem;">✦ add or remove stops below ✦</span>
     </div>
 </div>
 
@@ -238,8 +238,12 @@
 
 <script>
     (function() {
-        // ---------- EXACT LOCATIONS (in correct order, with real coordinates converted from plus codes) ----------
-        // Coordinates approximated based on known Idukki geography & plus code lookup
+        // ========================
+        // ✨ EDIT YOUR ROUTE HERE ✨
+        // ========================
+        // Add or remove locations in the order you want to travel.
+        // Get coordinates from Google Maps: right-click a point → "What's here?"
+        // Replace the image URLs with your own photos if desired.
         const locations = [
             { name: "Kozhipally", line: "Where the valley whispers", lat: 9.8265, lng: 76.8612, img: "https://picsum.photos/id/15/200/200" },
             { name: "Naliyani", line: "Mist & monsoon dreams", lat: 9.8520, lng: 76.8480, img: "https://picsum.photos/id/96/200/200" },
@@ -253,11 +257,14 @@
             { name: "HideOut Cottages", line: "Journey returns home • loop complete", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" }
         ];
         
+        // ------------------------------------------------------------
+        // No need to edit below – everything works automatically
+        // ------------------------------------------------------------
+        
         const totalStops = locations.length;
         const milestones = [];
         for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
 
-        // DOM elements
         const wrapper = document.querySelector('.journey-wrapper');
         const popupCard = document.getElementById('popupCard');
         const popupLocationSpan = document.getElementById('popupLocation');
@@ -271,7 +278,7 @@
         let routeLength = 0;
         let animationFrameId = null;
 
-        // ---------- AUDIO (soft ting) ----------
+        // ---------- AUDIO ----------
         let audioCtx = null;
         let audioAllowed = false;
 
@@ -308,7 +315,7 @@
         window.addEventListener('touchstart', unlockAudio);
         window.addEventListener('scroll', unlockAudio, { once: true });
 
-        // ----- MAP INIT -----
+        // ----- MAP -----
         function initMap() {
             map = L.map('realMap').setView([9.88, 76.82], 11);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -318,43 +325,35 @@
                 minZoom: 8
             }).addTo(map);
 
-            // Build route polyline in exact order
             routeLatLngs = locations.map(loc => [loc.lat, loc.lng]);
             polyline = L.polyline(routeLatLngs, { color: '#c0ff8f', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
             
-            // Calculate total route distance (meters)
             routeLength = 0;
             for (let i = 1; i < routeLatLngs.length; i++) {
                 routeLength += map.distance(routeLatLngs[i-1], routeLatLngs[i]);
             }
             
-            // Add red circular markers for each stop
             locations.forEach((loc, idx) => {
                 const marker = L.circleMarker([loc.lat, loc.lng], {
                     radius: 9,
                     fillColor: '#ff3a3a',
                     color: '#ffc107',
                     weight: 2.5,
-                    fillOpacity: 1,
-                    className: 'stop-marker'
+                    fillOpacity: 1
                 }).addTo(map);
                 marker.bindTooltip(loc.name, { permanent: false, direction: 'top', offset: [0, -10] });
                 stopMarkers.push(marker);
             });
             
-            // Create custom traveler marker (glowing diamond/circle)
             const travelerIcon = L.divIcon({
                 className: 'traveler-marker',
                 iconSize: [26, 26],
                 html: '<div style="width:100%;height:100%;background:#ffde9c;border-radius:50%;box-shadow:0 0 15px #ffb347;"></div>'
             });
             travelerMarker = L.marker(routeLatLngs[0], { icon: travelerIcon }).addTo(map);
-            
-            // Fit map to show full route with padding
             map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
         }
         
-        // Get point along polyline by fraction (0 to 1) using distance interpolation
         function getPointAtFraction(fraction) {
             if (!polyline || routeLatLngs.length < 2) return routeLatLngs[0];
             const totalDist = routeLength;
@@ -373,23 +372,19 @@
             return routeLatLngs[routeLatLngs.length - 1];
         }
         
-        // Update traveler marker based on scroll progress
         function updateTraveler(progress) {
             if (!travelerMarker) return;
             const point = getPointAtFraction(progress);
             travelerMarker.setLatLng(point);
-            // Smooth map pan to keep traveler near center
             if (progress > 0.02 && progress < 0.98) {
                 map.panTo(point, { animate: false, duration: 0.1 });
             }
         }
         
-        // Trigger popup & sound at each stop
         function checkStopTriggers(progress) {
             for (let i = 0; i < milestones.length; i++) {
                 if (!triggeredStops[i] && progress >= milestones[i]) {
                     triggeredStops[i] = true;
-                    // Update popup with location image & text
                     popupLocationSpan.innerText = locations[i].name;
                     popupTaglineSpan.innerText = locations[i].line;
                     popupImage.src = locations[i].img;
@@ -398,14 +393,12 @@
                     void popupCard.offsetWidth;
                     popupCard.classList.add('active');
                     
-                    // Play ting sound
                     if (audioCtx && audioCtx.state === 'running') playTing();
                     else if (audioAllowed) playTing();
                     else if (audioCtx && audioCtx.state === 'suspended') {
                         audioCtx.resume().then(() => playTing()).catch(e=>{});
                     }
                     
-                    // Flash the red marker
                     if (stopMarkers[i]) {
                         const marker = stopMarkers[i];
                         marker.setStyle({ radius: 14, fillColor: '#ff7777' });
@@ -415,7 +408,6 @@
             }
         }
         
-        // ---------- SCROLL PROGRESS (200vh spacer gives fast, responsive experience) ----------
         function updateScrollProgress() {
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
@@ -442,7 +434,6 @@
             updateScrollProgress();
         });
         
-        // Initialize map after page load
         window.addEventListener('load', () => {
             initMap();
             setTimeout(() => {
@@ -459,7 +450,6 @@
         }
         
         initAudio();
-        triggeredStops.fill(false);
     })();
 </script>
 </body>
