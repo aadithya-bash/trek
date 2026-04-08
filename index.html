@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>The Silence Drive | HideOut Cottages – Cinematic Photo Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #071a0a;
+            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            overflow-x: hidden;
+            color: #eef5e2;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at 30% 10%, #0e2a12, #021005);
+            border-bottom: 2px solid #9fcc7a40;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.8rem, 12vw, 5.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #E9F5DB, #B8DF8E);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.3);
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            padding: 0.6rem 1.8rem;
+            border-radius: 60px;
+        }
+
+        .scroll-hint {
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            animation: floatHint 2s infinite;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: #c4f0a3;
+        }
+
+        @keyframes floatHint {
+            0% { transform: translateY(0); opacity: 0.6; }
+            100% { transform: translateY(12px); opacity: 1; }
+        }
+
+        .journey-wrapper {
+            position: relative;
+            background: #021005;
+        }
+
+        .sticky-road {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            background: radial-gradient(ellipse at 30% 40%, #0a1f0e, #010802);
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        .road-svg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 6px #96f06e40);
+        }
+
+        .road-path {
+            stroke: #c0ff8f;
+            stroke-width: 6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 4px #aaff80);
+            animation: roadPulse 2.5s infinite alternate;
+        }
+
+        @keyframes roadPulse {
+            0% { stroke: #a5f07a; opacity: 0.9; }
+            100% { stroke: #e5ffbe; opacity: 1; }
+        }
+
+        .glow-bg {
+            stroke: #2a6b1f;
+            stroke-width: 18;
+            opacity: 0.3;
+        }
+
+        .location-marker {
+            fill: #ff3a3a;
+            stroke: #ffc107;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 5px #ff5e00);
+            transition: r 0.2s ease;
+            cursor: pointer;
+        }
+
+        .traveler {
+            fill: #ffecb3;
+            stroke: #ffb347;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 12px #ffb347);
+        }
+
+        .traveler-glow {
+            fill: #ffb347;
+            opacity: 0.7;
+        }
+
+        /* Popup with image */
+        .popup-card {
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(12, 25, 10, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 1rem 1.8rem;
+            text-align: center;
+            border: 1px solid rgba(200, 255, 140, 0.7);
+            box-shadow: 0 25px 40px -12px black;
+            z-index: 50;
+            transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 260px;
+            max-width: 320px;
+        }
+
+        .popup-card.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .popup-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #c7ff96;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .popup-text {
+            text-align: center;
+        }
+
+        .popup-card .location {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #f9ffdb;
+        }
+
+        .popup-card .tagline {
+            font-size: 0.85rem;
+            color: #ceffaa;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .journey-spacer {
+            height: 200vh;
+            width: 100%;
+            background: transparent;
+        }
+
+        .final-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(145deg, #071f0b, #010803);
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .final-section h2 {
+            font-size: 2.8rem;
+            font-weight: 500;
+            color: #dcffbf;
+            max-width: 800px;
+        }
+
+        .btn-ride {
+            background: #a7e074;
+            border: none;
+            padding: 1rem 2.8rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 60px;
+            color: #142e0c;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+        }
+
+        .btn-ride:hover {
+            background: #c5ff98;
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 700px) {
+            .popup-card { width: 85%; padding: 0.8rem; bottom: 8%; }
+            .popup-card .location { font-size: 1.3rem; }
+            .popup-img { width: 60px; height: 60px; }
+            .road-path { stroke-width: 4; }
+        }
+
+        @keyframes pulseRed {
+            0% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
+            50% { r: 18px; fill: #ff7777; stroke-width: 4; }
+            100% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>The Silence Drive</h1>
+    <p>by HideOut Cottages, Kulamavu, Idukki</p>
+    <div class="scroll-hint">
+        <span>⬇ Scroll to begin the journey ⬇</span>
+        <span style="font-size: 0.75rem;">✦ winding route • photo memories ✦</span>
+    </div>
+</div>
+
+<div class="journey-wrapper">
+    <div class="sticky-road">
+        <div class="road-svg-container">
+            <svg viewBox="0 0 1400 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- thick background glow -->
+                <path id="roadGlow" class="glow-bg" d="
+                    M 100 120 
+                    C 300 100, 400 200, 600 180
+                    C 800 160, 900 300, 1100 280
+                    C 1250 260, 1300 400, 1200 480
+                    C 1080 570, 900 520, 750 580
+                    C 600 640, 500 720, 350 700
+                    C 200 680, 150 760, 250 780
+                    C 400 810, 600 770, 800 750
+                    C 1000 730, 1150 780, 1300 740
+                " />
+                
+                <!-- main curvy road -->
+                <path id="roadPath" class="road-path" d="
+                    M 100 120 
+                    C 300 100, 400 200, 600 180
+                    C 800 160, 900 300, 1100 280
+                    C 1250 260, 1300 400, 1200 480
+                    C 1080 570, 900 520, 750 580
+                    C 600 640, 500 720, 350 700
+                    C 200 680, 150 760, 250 780
+                    C 400 810, 600 770, 800 750
+                    C 1000 730, 1150 780, 1300 740
+                " />
+                
+                <!-- red markers container -->
+                <g id="markersGroup"></g>
+                
+                <!-- moving diamond (location bar) -->
+                <g id="travelerGroup">
+                    <polygon points="0,-18 12,0 0,18 -12,0" class="traveler" />
+                    <circle cx="0" cy="0" r="10" class="traveler-glow" />
+                </g>
+            </svg>
+        </div>
+    </div>
+    <div class="journey-spacer" id="journeySpacer"></div>
+</div>
+
+<div class="final-section">
+    <h2>You didn’t just scroll.<br>You traveled.</h2>
+    <button class="btn-ride" id="planRideBtn">Plan Your Ride</button>
+</div>
+
+<div id="popupCard" class="popup-card">
+    <img id="popupImage" class="popup-img" src="" alt="location view">
+    <div class="popup-text">
+        <div class="location" id="popupLocation">Kulamavu</div>
+        <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Locations with unique images (using high-quality nature pics from picsum with fixed seeds)
+        const locations = [
+            { name: "Kulamavu", line: "Where the water meets stillness", img: "https://picsum.photos/id/104/200/200" },     // lake
+            { name: "Nadukani", line: "Clouds brush the mountain spine", img: "https://picsum.photos/id/104/200/200" },    // mountain
+            { name: "Kozhippalli", line: "Echoes of forgotten trails", img: "https://picsum.photos/id/15/200/200" },       // forest path
+            { name: "Naliyani", line: "Mist & monsoon dreams", img: "https://picsum.photos/id/96/200/200" },               // misty
+            { name: "Kanjar", line: "The wild fern corridor", img: "https://picsum.photos/id/127/200/200" },               // fern
+            { name: "Ilaveezhapunchira", line: "Where the sky rests on the hills", img: "https://picsum.photos/id/29/200/200" }, // hill sky
+            { name: "Ulupuni", line: "Silence drips from every leaf", img: "https://picsum.photos/id/42/200/200" },         // rainy leaf
+            { name: "Ashramam", line: "Pathway to inner calm", img: "https://picsum.photos/id/88/200/200" },               // temple
+            { name: "Moolamattom", line: "The power of earth's heart", img: "https://picsum.photos/id/24/200/200" },       // river
+            { name: "Back to HideOut", line: "Journey returns home • loop complete", img: "https://picsum.photos/id/169/200/200" } // cottage
+        ];
+        const totalStops = locations.length;
+        const milestones = [];
+        for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
+
+        // DOM elements
+        const svgPathElem = document.getElementById('roadPath');
+        const travelerGroup = document.getElementById('travelerGroup');
+        const markersGroup = document.getElementById('markersGroup');
+        const wrapper = document.querySelector('.journey-wrapper');
+        const popupCard = document.getElementById('popupCard');
+        const popupLocationSpan = document.getElementById('popupLocation');
+        const popupTaglineSpan = document.getElementById('popupTagline');
+        const popupImage = document.getElementById('popupImage');
+
+        let triggeredStops = new Array(totalStops).fill(false);
+        let currentProgress = 0;
+        let pathLength = 0;
+        let animationFrameId = null;
+        let markerCircles = [];
+
+        // ---------- AUDIO (soft ting) ----------
+        let audioCtx = null;
+        let audioAllowed = false;
+
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) { console.warn("Web Audio not supported"); }
+        }
+
+        function playTing() {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 1150.0;
+            gain.gain.value = 0.16;
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+            osc.start();
+            osc.stop(now + 0.5);
+        }
+
+        function unlockAudio() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => { audioAllowed = true; }).catch(e=>{});
+            } else if (!audioCtx) {
+                initAudio();
+                if(audioCtx) audioCtx.resume().then(()=> audioAllowed=true);
+            }
+        }
+        window.addEventListener('click', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio);
+        window.addEventListener('scroll', unlockAudio, { once: true });
+
+        // ----- PATH LENGTH & MARKERS (pure viewBox coordinates) -----
+        function getPathLength() {
+            if (svgPathElem) pathLength = svgPathElem.getTotalLength();
+        }
+
+        // Create red markers at each milestone (viewBox coordinates)
+        function updateMarkersPosition() {
+            if (!svgPathElem || !pathLength) return;
+            markersGroup.innerHTML = '';
+            markerCircles = [];
+            for (let i = 0; i < milestones.length; i++) {
+                const point = svgPathElem.getPointAtLength(milestones[i] * pathLength);
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", point.x);
+                circle.setAttribute("cy", point.y);
+                circle.setAttribute("r", "14");
+                circle.setAttribute("class", "location-marker");
+                circle.setAttribute("data-stop", i);
+                markersGroup.appendChild(circle);
+                markerCircles.push(circle);
+            }
+        }
+
+        // Update traveler (diamond) position and rotation
+        function updateTraveler(progress) {
+            if (!svgPathElem || !pathLength) return;
+            const clamped = Math.min(1, Math.max(0, progress));
+            const point = svgPathElem.getPointAtLength(clamped * pathLength);
+            travelerGroup.setAttribute("transform", `translate(${point.x}, ${point.y})`);
+            
+            // rotation based on path direction
+            let angle = 0;
+            if (clamped < 0.99) {
+                const nextT = Math.min(1, clamped + 0.02);
+                const p1 = svgPathElem.getPointAtLength(clamped * pathLength);
+                const p2 = svgPathElem.getPointAtLength(nextT * pathLength);
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            } else if (clamped > 0.01) {
+                const prevT = Math.max(0, clamped - 0.02);
+                const p1 = svgPathElem.getPointAtLength(prevT * pathLength);
+                const p2 = svgPathElem.getPointAtLength(clamped * pathLength);
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            }
+            travelerGroup.style.transform = `rotate(${angle + 45}deg)`;
+        }
+
+        // Trigger popup, sound, marker flash
+        function checkStopTriggers(progress) {
+            for (let i = 0; i < milestones.length; i++) {
+                if (!triggeredStops[i] && progress >= milestones[i]) {
+                    triggeredStops[i] = true;
+                    // update popup content with image
+                    popupLocationSpan.innerText = locations[i].name;
+                    popupTaglineSpan.innerText = locations[i].line;
+                    popupImage.src = locations[i].img;
+                    popupImage.alt = locations[i].name;
+                    popupCard.classList.remove('active');
+                    void popupCard.offsetWidth;
+                    popupCard.classList.add('active');
+                    
+                    // play sound
+                    if (audioCtx && audioCtx.state === 'running') playTing();
+                    else if (audioAllowed) playTing();
+                    else if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume().then(() => playTing()).catch(e=>{});
+                    }
+                    
+                    // flash marker
+                    if (markerCircles[i]) {
+                        markerCircles[i].style.animation = "none";
+                        markerCircles[i].offsetHeight;
+                        markerCircles[i].style.animation = "pulseRed 0.35s ease-in-out 2";
+                    }
+                }
+            }
+        }
+
+        // ---------- SCROLL PROGRESS (reliable, fast 200vh) ----------
+        function updateScrollProgress() {
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            const wrapperHeight = wrapper.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            const totalScrollable = wrapperHeight - viewportHeight;
+            let progress = 0;
+            if (totalScrollable > 0) {
+                let scrolled = -rect.top;
+                progress = scrolled / totalScrollable;
+                progress = Math.min(1, Math.max(0, progress));
+            }
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(() => {
+                if (pathLength === 0) {
+                    getPathLength();
+                    updateMarkersPosition();
+                }
+                currentProgress = progress;
+                updateTraveler(currentProgress);
+                checkStopTriggers(currentProgress);
+            });
+        }
+
+        // Resize handling: re-measure path and reposition markers
+        function handleResize() {
+            getPathLength();
+            updateMarkersPosition();
+            updateTraveler(currentProgress);
+        }
+
+        window.addEventListener('scroll', updateScrollProgress);
+        window.addEventListener('resize', () => {
+            setTimeout(handleResize, 80);
+        });
+
+        // Initialization
+        function initialize() {
+            getPathLength();
+            updateMarkersPosition();
+            updateTraveler(0);
+            triggeredStops.fill(false);
+            popupCard.classList.remove('active');
+            currentProgress = 0;
+            // ensure first popup doesn't appear until scroll
+            setTimeout(() => {
+                handleResize();
+            }, 120);
+        }
+
+        const planBtn = document.getElementById('planRideBtn');
+        if (planBtn) {
+            planBtn.addEventListener('click', () => {
+                alert("✨ Plan your real silence drive at HideOut Cottages, Kulamavu. Contact: +91 99999 00000 ✨");
+            });
+        }
+
+        initAudio();
+        initialize();
+        window.addEventListener('load', () => {
+            handleResize();
+        });
+    })();
+</script>
+</body>
+</html>
