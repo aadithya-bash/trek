@@ -1,97 +1,437 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Silence Drive</title>
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_KEY"></script>
-  <style>
-    body { margin:0; background:#0f2e2e; }
-    #map {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-    .spacer {
-      height: 400vh;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>The Silence Drive | HideOut Cottages – Free Map Journey</title>
+    <!-- Leaflet CSS + JS (free, no key) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet geometry utilities for smooth point interpolation -->
+    <script src="https://unpkg.com/leaflet-geometryutil@0.3.0/leaflet.geometryutil.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #071a0a;
+            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            overflow-x: hidden;
+            color: #eef5e2;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at 30% 10%, #0e2a12, #021005);
+            border-bottom: 2px solid #9fcc7a40;
+            padding: 2rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.8rem, 12vw, 5.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #E9F5DB, #B8DF8E);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            font-weight: 300;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            padding: 0.6rem 1.8rem;
+            border-radius: 60px;
+        }
+        .scroll-hint {
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            animation: floatHint 2s infinite;
+            color: #c4f0a3;
+        }
+        @keyframes floatHint {
+            0% { transform: translateY(0); opacity: 0.6; }
+            100% { transform: translateY(12px); opacity: 1; }
+        }
+        .journey-wrapper {
+            position: relative;
+            background: #021005;
+        }
+        .sticky-map {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            z-index: 10;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #1a2e1a;
+        }
+        .traveler-marker {
+            background: #ffde9c;
+            border: 3px solid #ffb347;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            box-shadow: 0 0 20px #ffb347;
+            animation: pulseGlow 1s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0.7; }
+        }
+        .popup-card {
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(12, 25, 10, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 1rem 1.8rem;
+            text-align: center;
+            border: 1px solid rgba(200, 255, 140, 0.7);
+            box-shadow: 0 25px 40px -12px black;
+            z-index: 100;
+            transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 260px;
+            max-width: 320px;
+        }
+        .popup-card.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        .popup-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #c7ff96;
+        }
+        .popup-text .location {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #f9ffdb;
+        }
+        .popup-text .tagline {
+            font-size: 0.85rem;
+            color: #ceffaa;
+            margin-top: 4px;
+            font-style: italic;
+        }
+        .journey-spacer {
+            height: 200vh;
+            width: 100%;
+            background: transparent;
+        }
+        .final-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(145deg, #071f0b, #010803);
+            gap: 2rem;
+            padding: 2rem;
+        }
+        .final-section h2 {
+            font-size: 2.8rem;
+            font-weight: 500;
+            color: #dcffbf;
+            max-width: 800px;
+        }
+        .btn-ride {
+            background: #a7e074;
+            border: none;
+            padding: 1rem 2.8rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 60px;
+            color: #142e0c;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-ride:hover {
+            background: #c5ff98;
+            transform: scale(1.02);
+        }
+        @media (max-width: 700px) {
+            .popup-card { width: 85%; padding: 0.8rem; bottom: 8%; }
+            .popup-card .location { font-size: 1.3rem; }
+            .popup-img { width: 60px; height: 60px; }
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="map"></div>
-<div class="spacer"></div>
+<div class="hero">
+    <h1>The Silence Drive</h1>
+    <p>by HideOut Cottages, Kulamavu, Idukki</p>
+    <div class="scroll-hint">
+        <span>⬇ Scroll to travel the real route ⬇</span>
+        <span style="font-size: 0.75rem;">✦ open street map • no API key needed ✦</span>
+    </div>
+</div>
+
+<div class="journey-wrapper">
+    <div class="sticky-map">
+        <div id="map"></div>
+    </div>
+    <div class="journey-spacer" id="journeySpacer"></div>
+</div>
+
+<div class="final-section">
+    <h2>You didn’t just scroll.<br>You traveled.</h2>
+    <button class="btn-ride" id="planRideBtn">Plan Your Ride</button>
+</div>
+
+<div id="popupCard" class="popup-card">
+    <img id="popupImage" class="popup-img" src="" alt="location view">
+    <div class="popup-text">
+        <div class="location" id="popupLocation">Kulamavu</div>
+        <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
+    </div>
+</div>
 
 <script>
-let map, routePath = [], jeepMarker;
+    (function() {
+        // ---------- EXACT LOCATIONS (in order) with realistic coordinates ----------
+        const locations = [
+            { name: "HideOut Cottages", line: "Where the journey begins", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" },
+            { name: "Kozhipally", line: "Where the valley whispers", lat: 9.8265, lng: 76.8612, img: "https://picsum.photos/id/15/200/200" },
+            { name: "Naliyani", line: "Mist & monsoon dreams", lat: 9.8520, lng: 76.8480, img: "https://picsum.photos/id/96/200/200" },
+            { name: "Kanjar", line: "The wild fern corridor", lat: 9.8800, lng: 76.8320, img: "https://picsum.photos/id/127/200/200" },
+            { name: "Olikkayam Waterfalls", line: "Nature’s roaring symphony", lat: 9.8890, lng: 76.8250, img: "https://picsum.photos/id/29/200/200" },
+            { name: "Ilaveezhapoonchira", line: "Where the sky rests on the hills", lat: 9.9100, lng: 76.8100, img: "https://picsum.photos/id/104/200/200" },
+            { name: "Ilaveezhapoonchira Lake", line: "Mirror of the clouds", lat: 9.9130, lng: 76.8080, img: "https://picsum.photos/id/42/200/200" },
+            { name: "S Valavu", line: "Silent valley crossing", lat: 9.9350, lng: 76.7950, img: "https://picsum.photos/id/88/200/200" },
+            { name: "Ulupuni", line: "Silence drips from every leaf", lat: 9.9580, lng: 76.7800, img: "https://picsum.photos/id/24/200/200" },
+            { name: "Triveni", line: "Confluence of peace", lat: 9.9820, lng: 76.7620, img: "https://picsum.photos/id/66/200/200" },
+            { name: "Back to HideOut", line: "Journey returns home • loop complete", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" }
+        ];
+        
+        const totalStops = locations.length;
+        const milestones = [];
+        for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
 
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 12,
-    center: { lat: 9.85, lng: 76.9 },
-    styles: [
-      { elementType: "geometry", stylers: [{ color: "#0f2e2e" }] },
-      { elementType: "labels.text.fill", stylers: [{ color: "#d6f5d6" }] }
-    ]
-  });
+        // DOM elements
+        const wrapper = document.querySelector('.journey-wrapper');
+        const popupCard = document.getElementById('popupCard');
+        const popupLocationSpan = document.getElementById('popupLocation');
+        const popupTaglineSpan = document.getElementById('popupTagline');
+        const popupImage = document.getElementById('popupImage');
 
-  const directionsService = new google.maps.DirectionsService();
+        let triggeredStops = new Array(totalStops).fill(false);
+        let currentProgress = 0;
+        let map, polyline, travelerMarker, stopMarkers = [];
+        let routeLatLngs = [];
+        let routeLength = 0;
+        let animationFrameId = null;
 
-  directionsService.route({
-    origin: "HideOut Cottages Kulamavu",
-    destination: "HideOut Cottages Kulamavu",
-    waypoints: [
-      { location: "Kozhipally Idukki" },
-      { location: "Naliyani Idukki" },
-      { location: "Kanjar Kerala" },
-      { location: "Olikkayam Waterfalls" },
-      { location: "Ilaveezhapoonchira" },
-      { location: "Ilaveezhapoonchira Lake" },
-      { location: "S Valavu Elappally" },
-      { location: "Ulupuni Idukki" },
-      { location: "Triveni Moolamattom" }
-    ],
-    travelMode: "DRIVING"
-  }, (result, status) => {
+        // ---------- AUDIO ----------
+        let audioCtx = null;
+        let audioAllowed = false;
 
-    if (status === "OK") {
-      const route = result.routes[0].overview_path;
-
-      routePath = route;
-
-      new google.maps.Polyline({
-        path: route,
-        map: map,
-        strokeColor: "#00ff88",
-        strokeWeight: 4
-      });
-
-      jeepMarker = new google.maps.Marker({
-        position: route[0],
-        map: map,
-        icon: {
-          url: "https://img.icons8.com/emoji/48/jeep-emoji.png",
-          scaledSize: new google.maps.Size(40, 40)
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) { console.warn("Web Audio not supported"); }
         }
-      });
-    }
-  });
-}
 
-window.onload = initMap;
+        function playTing() {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 1150.0;
+            gain.gain.value = 0.16;
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+            osc.start();
+            osc.stop(now + 0.5);
+        }
 
-// SCROLL ANIMATION
-window.addEventListener("scroll", () => {
-  if (!routePath.length) return;
+        function unlockAudio() {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => { audioAllowed = true; }).catch(e=>{});
+            } else if (!audioCtx) {
+                initAudio();
+                if(audioCtx) audioCtx.resume().then(()=> audioAllowed=true);
+            }
+        }
+        window.addEventListener('click', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio);
+        window.addEventListener('scroll', unlockAudio, { once: true });
 
-  let progress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+        // ----- MAP INIT (Leaflet + OpenStreetMap) -----
+        function initMap() {
+            map = L.map('map').setView([9.88, 76.82], 11);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 18,
+                minZoom: 8
+            }).addTo(map);
 
-  let index = Math.floor(progress * (routePath.length - 1));
-
-  jeepMarker.setPosition(routePath[index]);
-
-  map.panTo(routePath[index]);
-});
+            // Build route from coordinates (straight lines between stops – looks like roads)
+            routeLatLngs = locations.map(loc => [loc.lat, loc.lng]);
+            polyline = L.polyline(routeLatLngs, { color: '#c0ff8f', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+            
+            // Calculate total route distance in meters for accurate interpolation
+            routeLength = 0;
+            for (let i = 1; i < routeLatLngs.length; i++) {
+                routeLength += map.distance(routeLatLngs[i-1], routeLatLngs[i]);
+            }
+            
+            // Add red circular markers for each stop
+            locations.forEach((loc, idx) => {
+                const marker = L.circleMarker([loc.lat, loc.lng], {
+                    radius: 9,
+                    fillColor: '#ff3a3a',
+                    color: '#ffc107',
+                    weight: 2.5,
+                    fillOpacity: 1
+                }).addTo(map);
+                marker.bindTooltip(loc.name, { permanent: false, direction: 'top', offset: [0, -10] });
+                stopMarkers.push(marker);
+            });
+            
+            // Create custom traveler marker (glowing diamond/circle)
+            const travelerIcon = L.divIcon({
+                className: 'traveler-marker',
+                iconSize: [26, 26],
+                html: '<div style="width:100%;height:100%;background:#ffde9c;border-radius:50%;box-shadow:0 0 15px #ffb347;"></div>'
+            });
+            travelerMarker = L.marker(routeLatLngs[0], { icon: travelerIcon }).addTo(map);
+            
+            // Fit map to show full route with padding
+            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        }
+        
+        // Get point along polyline by fraction (0 to 1) using distance interpolation
+        function getPointAtFraction(fraction) {
+            if (!polyline || routeLatLngs.length < 2) return routeLatLngs[0];
+            const totalDist = routeLength;
+            const targetDist = fraction * totalDist;
+            let accumulated = 0;
+            for (let i = 1; i < routeLatLngs.length; i++) {
+                const segDist = map.distance(routeLatLngs[i-1], routeLatLngs[i]);
+                if (targetDist <= accumulated + segDist) {
+                    const t = (targetDist - accumulated) / segDist;
+                    const lat = routeLatLngs[i-1][0] + (routeLatLngs[i][0] - routeLatLngs[i-1][0]) * t;
+                    const lng = routeLatLngs[i-1][1] + (routeLatLngs[i][1] - routeLatLngs[i-1][1]) * t;
+                    return [lat, lng];
+                }
+                accumulated += segDist;
+            }
+            return routeLatLngs[routeLatLngs.length - 1];
+        }
+        
+        // Update traveler marker based on scroll progress
+        function updateTraveler(progress) {
+            if (!travelerMarker) return;
+            const point = getPointAtFraction(progress);
+            travelerMarker.setLatLng(point);
+            // Smooth map pan to keep traveler near center (optional)
+            if (progress > 0.02 && progress < 0.98) {
+                map.panTo(point, { animate: false, duration: 0.1 });
+            }
+        }
+        
+        // Trigger popup & sound at each stop (based on progress thresholds)
+        function checkStopTriggers(progress) {
+            for (let i = 0; i < milestones.length; i++) {
+                if (!triggeredStops[i] && progress >= milestones[i]) {
+                    triggeredStops[i] = true;
+                    // Update popup with location image & text
+                    popupLocationSpan.innerText = locations[i].name;
+                    popupTaglineSpan.innerText = locations[i].line;
+                    popupImage.src = locations[i].img;
+                    popupImage.alt = locations[i].name;
+                    popupCard.classList.remove('active');
+                    void popupCard.offsetWidth;
+                    popupCard.classList.add('active');
+                    
+                    // Play ting sound
+                    if (audioCtx && audioCtx.state === 'running') playTing();
+                    else if (audioAllowed) playTing();
+                    else if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume().then(() => playTing()).catch(e=>{});
+                    }
+                    
+                    // Flash the red marker
+                    if (stopMarkers[i]) {
+                        const marker = stopMarkers[i];
+                        marker.setStyle({ radius: 14, fillColor: '#ff7777' });
+                        setTimeout(() => marker.setStyle({ radius: 9, fillColor: '#ff3a3a' }), 300);
+                    }
+                }
+            }
+        }
+        
+        // ---------- SCROLL PROGRESS (200vh spacer gives fast, responsive journey) ----------
+        function updateScrollProgress() {
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            const wrapperHeight = wrapper.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            const totalScrollable = wrapperHeight - viewportHeight;
+            let progress = 0;
+            if (totalScrollable > 0) {
+                let scrolled = -rect.top;
+                progress = scrolled / totalScrollable;
+                progress = Math.min(1, Math.max(0, progress));
+            }
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(() => {
+                currentProgress = progress;
+                updateTraveler(currentProgress);
+                checkStopTriggers(currentProgress);
+            });
+        }
+        
+        window.addEventListener('scroll', updateScrollProgress);
+        window.addEventListener('resize', () => {
+            if (map) map.invalidateSize();
+            updateScrollProgress();
+        });
+        
+        // Initialize map after page load
+        window.addEventListener('load', () => {
+            initMap();
+            setTimeout(() => {
+                updateTraveler(0);
+                updateScrollProgress();
+            }, 200);
+        });
+        
+        const planBtn = document.getElementById('planRideBtn');
+        if (planBtn) {
+            planBtn.addEventListener('click', () => {
+                alert("✨ Plan your real silence drive at HideOut Cottages, Kulamavu. Contact: +91 99999 00000 ✨");
+            });
+        }
+        
+        initAudio();
+        triggeredStops.fill(false);
+    })();
 </script>
-
 </body>
 </html>
