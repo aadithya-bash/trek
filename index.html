@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Silence Drive | HideOut Cottages – Curvy Full‑Width Journey</title>
+    <title>The Silence Drive | HideOut Cottages – Real Map Journey</title>
+    
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil@0.3.0/leaflet.geometryutil.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -18,7 +24,6 @@
             color: #eef5e2;
         }
 
-        /* INTRO SECTION */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -38,14 +43,12 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0 2px 15px rgba(0,0,0,0.3);
             margin-bottom: 1rem;
         }
 
         .hero p {
             font-size: 1.3rem;
             font-weight: 300;
-            letter-spacing: 2px;
             background: rgba(0,0,0,0.4);
             backdrop-filter: blur(4px);
             padding: 0.6rem 1.8rem;
@@ -56,9 +59,6 @@
             margin-top: 3rem;
             font-size: 0.9rem;
             animation: floatHint 2s infinite;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
             color: #c4f0a3;
         }
 
@@ -67,104 +67,73 @@
             100% { transform: translateY(12px); opacity: 1; }
         }
 
-        /* JOURNEY WRAPPER */
         .journey-wrapper {
             position: relative;
             background: #021005;
         }
 
-        .sticky-road {
+        .sticky-map {
             position: sticky;
             top: 0;
             height: 100vh;
             width: 100%;
-            overflow: hidden;
-            background: radial-gradient(ellipse at 30% 40%, #0a1f0e, #010802);
-            box-shadow: inset 0 0 80px rgba(0,0,0,0.6);
             z-index: 10;
         }
 
-        .road-svg-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        #realMap {
             height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        svg {
             width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 6px #96f06e40);
+            background: #1a2e1a;
         }
 
-        /* Main curvy road */
-        .road-path {
-            stroke: #c0ff8f;
-            stroke-width: 6;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            filter: drop-shadow(0 0 4px #aaff80);
-            animation: roadPulse 2.5s infinite alternate;
+        /* Custom map marker styles */
+        .custom-marker {
+            background: #ff3a3a;
+            border: 3px solid #ffc107;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            box-shadow: 0 0 12px #ff5e00;
         }
 
-        @keyframes roadPulse {
-            0% { stroke: #a5f07a; opacity: 0.9; }
-            100% { stroke: #e5ffbe; opacity: 1; }
+        .traveler-marker {
+            background: #ffde9c;
+            border: 2px solid #ffb347;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            box-shadow: 0 0 20px #ffb347;
+            animation: pulseGlow 1s infinite;
         }
 
-        .glow-bg {
-            stroke: #2a6b1f;
-            stroke-width: 18;
-            opacity: 0.3;
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0.7; }
         }
 
-        /* Red location markers */
-        .location-marker {
-            fill: #ff3a3a;
-            stroke: #ffc107;
-            stroke-width: 2;
-            filter: drop-shadow(0 0 4px #ff0000);
-            transition: r 0.2s ease;
-            cursor: pointer;
-        }
-
-        /* moving indicator (location bar / diamond) */
-        .traveler {
-            fill: #ffde9c;
-            stroke: #ffb347;
-            stroke-width: 2;
-            filter: drop-shadow(0 0 10px #ffb347);
-            transition: all 0.05s linear;
-        }
-
-        .traveler-glow {
-            fill: #ffb347;
-            opacity: 0.6;
-        }
-
-        /* POPUP CARD */
+        /* Popup card (image + text) */
         .popup-card {
             position: fixed;
-            bottom: 12%;
+            bottom: 10%;
             left: 50%;
-            transform: translateX(-50%) scale(0.92);
-            background: rgba(12, 28, 10, 0.9);
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(12, 25, 10, 0.95);
             backdrop-filter: blur(20px);
-            border-radius: 48px;
-            padding: 1rem 2rem;
+            border-radius: 32px;
+            padding: 1rem 1.8rem;
             text-align: center;
             border: 1px solid rgba(200, 255, 140, 0.7);
-            box-shadow: 0 20px 35px -8px black;
-            z-index: 50;
+            box-shadow: 0 25px 40px -12px black;
+            z-index: 100;
             transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
             opacity: 0;
             pointer-events: none;
-            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 260px;
+            max-width: 320px;
         }
 
         .popup-card.active {
@@ -172,27 +141,33 @@
             transform: translateX(-50%) scale(1);
         }
 
-        .popup-card .location {
-            font-size: 2rem;
+        .popup-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #c7ff96;
+        }
+
+        .popup-text .location {
+            font-size: 1.6rem;
             font-weight: 700;
             color: #f9ffdb;
         }
 
-        .popup-card .tagline {
-            font-size: 0.9rem;
+        .popup-text .tagline {
+            font-size: 0.85rem;
             color: #ceffaa;
-            margin-top: 6px;
+            margin-top: 4px;
             font-style: italic;
         }
 
-        /* SPACER (faster scroll experience - 200vh only) */
         .journey-spacer {
             height: 200vh;
             width: 100%;
             background: transparent;
         }
 
-        /* FINAL SECTION */
         .final-section {
             min-height: 100vh;
             display: flex;
@@ -222,7 +197,6 @@
             color: #142e0c;
             cursor: pointer;
             transition: 0.2s;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.3);
         }
 
         .btn-ride:hover {
@@ -231,9 +205,15 @@
         }
 
         @media (max-width: 700px) {
-            .popup-card { white-space: normal; width: 80%; padding: 0.8rem 1rem; bottom: 8%; }
-            .popup-card .location { font-size: 1.5rem; }
-            .road-path { stroke-width: 4; }
+            .popup-card { width: 85%; padding: 0.8rem; bottom: 8%; }
+            .popup-card .location { font-size: 1.3rem; }
+            .popup-img { width: 60px; height: 60px; }
+        }
+
+        .leaflet-control-attribution {
+            font-size: 9px;
+            background: rgba(0,0,0,0.5);
+            color: #ccc;
         }
     </style>
 </head>
@@ -243,65 +223,14 @@
     <h1>The Silence Drive</h1>
     <p>by HideOut Cottages, Kulamavu, Idukki</p>
     <div class="scroll-hint">
-        <span>⬇ Scroll to begin the journey ⬇</span>
-        <span style="font-size: 0.75rem;">✦ full‑width curvy route • red markers ✦</span>
+        <span>⬇ Scroll to begin the real journey ⬇</span>
+        <span style="font-size: 0.75rem;">✦ interactive map • scroll controls the ride ✦</span>
     </div>
 </div>
 
 <div class="journey-wrapper">
-    <div class="sticky-road">
-        <div class="road-svg-container">
-            <svg viewBox="0 0 1400 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Definition for marker arrow (not used, just for style) -->
-                <defs>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
-                
-                <!-- Thick glowing underlay -->
-                <path id="roadGlow" class="glow-bg" d="
-                    M 100 120 
-                    C 300 100, 400 200, 600 180
-                    C 800 160, 900 300, 1100 280
-                    C 1250 260, 1300 400, 1200 480
-                    C 1080 570, 900 520, 750 580
-                    C 600 640, 500 720, 350 700
-                    C 200 680, 150 760, 250 780
-                    C 400 810, 600 770, 800 750
-                    C 1000 730, 1150 780, 1300 740
-                " />
-                
-                <!-- Main curvy, winding road (full width, lots of character) -->
-                <path id="roadPath" class="road-path" d="
-                    M 100 120 
-                    C 300 100, 400 200, 600 180
-                    C 800 160, 900 300, 1100 280
-                    C 1250 260, 1300 400, 1200 480
-                    C 1080 570, 900 520, 750 580
-                    C 600 640, 500 720, 350 700
-                    C 200 680, 150 760, 250 780
-                    C 400 810, 600 770, 800 750
-                    C 1000 730, 1150 780, 1300 740
-                " />
-                
-                <!-- RED MARKERS (precisely placed at 10 stops along the path) -->
-                <!-- We'll position them using known length percentages. 
-                     Since we know the total path length from JS, we'll dynamically place markers.
-                     For static fallback, we add them, but JS will reposition accurately. -->
-                <g id="markersGroup"></g>
-                
-                <!-- Moving indicator: a glowing diamond (location bar) -->
-                <g id="travelerGroup">
-                    <polygon points="0,-14 10,0 0,14 -10,0" class="traveler" />
-                    <circle cx="0" cy="0" r="8" class="traveler-glow" />
-                </g>
-            </svg>
-        </div>
+    <div class="sticky-map">
+        <div id="realMap"></div>
     </div>
     <div class="journey-spacer" id="journeySpacer"></div>
 </div>
@@ -312,54 +241,47 @@
 </div>
 
 <div id="popupCard" class="popup-card">
-    <div class="location" id="popupLocation">Kulamavu</div>
-    <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
+    <img id="popupImage" class="popup-img" src="" alt="location view">
+    <div class="popup-text">
+        <div class="location" id="popupLocation">Kulamavu</div>
+        <div class="tagline" id="popupTagline">The silent reservoir whispers</div>
+    </div>
 </div>
 
 <script>
     (function() {
-        // ---------- LOCATIONS (10 iconic stops) ----------
+        // ---------- LOCATIONS with approximate coordinates (Idukki region, Kerala) ----------
         const locations = [
-            { name: "Kulamavu", line: "Where the water meets stillness" },
-            { name: "Nadukani", line: "Clouds brush the mountain spine" },
-            { name: "Kozhippalli", line: "Echoes of forgotten trails" },
-            { name: "Naliyani", line: "Mist & monsoon dreams" },
-            { name: "Kanjar", line: "The wild fern corridor" },
-            { name: "Ilaveezhapunchira", line: "Where the sky rests on the hills" },
-            { name: "Ulupuni", line: "Silence drips from every leaf" },
-            { name: "Ashramam", line: "Pathway to inner calm" },
-            { name: "Moolamattom", line: "The power of earth's heart" },
-            { name: "Back to HideOut", line: "Journey returns home • loop complete" }
+            { name: "Kulamavu", line: "Where the water meets stillness", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/104/200/200" },
+            { name: "Nadukani", line: "Clouds brush the mountain spine", lat: 9.8200, lng: 76.8700, img: "https://picsum.photos/id/104/200/200" },
+            { name: "Kozhippalli", line: "Echoes of forgotten trails", lat: 9.8450, lng: 76.8550, img: "https://picsum.photos/id/15/200/200" },
+            { name: "Naliyani", line: "Mist & monsoon dreams", lat: 9.8700, lng: 76.8400, img: "https://picsum.photos/id/96/200/200" },
+            { name: "Kanjar", line: "The wild fern corridor", lat: 9.9000, lng: 76.8200, img: "https://picsum.photos/id/127/200/200" },
+            { name: "Ilaveezhapunchira", line: "Where the sky rests on the hills", lat: 9.9300, lng: 76.8000, img: "https://picsum.photos/id/29/200/200" },
+            { name: "Ulupuni", line: "Silence drips from every leaf", lat: 9.9600, lng: 76.7800, img: "https://picsum.photos/id/42/200/200" },
+            { name: "Ashramam", line: "Pathway to inner calm", lat: 9.9900, lng: 76.7600, img: "https://picsum.photos/id/88/200/200" },
+            { name: "Moolamattom", line: "The power of earth's heart", lat: 10.0200, lng: 76.7400, img: "https://picsum.photos/id/24/200/200" },
+            { name: "Back to HideOut", line: "Journey returns home • loop complete", lat: 9.7930, lng: 76.8850, img: "https://picsum.photos/id/169/200/200" }
         ];
         const totalStops = locations.length;
-        // milestones evenly spaced along the path (0 to 1)
         const milestones = [];
-        for (let i = 0; i < totalStops; i++) {
-            milestones.push(i / (totalStops - 1));
-        }
+        for (let i = 0; i < totalStops; i++) milestones.push(i / (totalStops - 1));
 
         // DOM elements
-        const svgPathElem = document.getElementById('roadPath');
-        const travelerGroup = document.getElementById('travelerGroup');
-        const markersGroup = document.getElementById('markersGroup');
         const wrapper = document.querySelector('.journey-wrapper');
-        const stickyRoad = document.querySelector('.sticky-road');
         const popupCard = document.getElementById('popupCard');
         const popupLocationSpan = document.getElementById('popupLocation');
         const popupTaglineSpan = document.getElementById('popupTagline');
+        const popupImage = document.getElementById('popupImage');
 
-        // State
         let triggeredStops = new Array(totalStops).fill(false);
         let currentProgress = 0;
-        let pathLength = 0;
-        let svgRect = null;
-        let containerRect = null;
+        let map, polyline, travelerMarker, stopMarkers = [];
+        let routeLatLngs = [];
+        let routeLength = 0;
         let animationFrameId = null;
-        
-        // Marker elements array (to store circles)
-        let markerCircles = [];
 
-        // ---------- AUDIO (soft "ting") ----------
+        // ---------- AUDIO ----------
         let audioCtx = null;
         let audioAllowed = false;
 
@@ -396,109 +318,112 @@
         window.addEventListener('touchstart', unlockAudio);
         window.addEventListener('scroll', unlockAudio, { once: true });
 
-        // ----- PATH LENGTH & MEASUREMENTS -----
-        function getPathLength() {
-            if (svgPathElem) pathLength = svgPathElem.getTotalLength();
-        }
+        // ----- MAP INITIALIZATION -----
+        function initMap() {
+            map = L.map('realMap').setView([9.88, 76.82], 11);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19,
+                minZoom: 8
+            }).addTo(map);
 
-        function refreshMeasurements() {
-            getPathLength();
-            const svgElem = document.querySelector('.road-svg-container svg');
-            if (svgElem) svgRect = svgElem.getBoundingClientRect();
-            if (stickyRoad) containerRect = stickyRoad.getBoundingClientRect();
-            updateMarkersPosition(); // reposition red markers after resize
-        }
-
-        // Create / update red markers at exact stop positions along the path
-        function updateMarkersPosition() {
-            if (!svgPathElem || !pathLength || !svgRect || !containerRect) return;
-            markersGroup.innerHTML = ''; // clear old markers
-            markerCircles = [];
+            // Build polyline from locations (smooth curve using lat/lng)
+            routeLatLngs = locations.map(loc => [loc.lat, loc.lng]);
+            polyline = L.polyline(routeLatLngs, { color: '#c0ff8f', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
             
-            const viewBoxW = 1400, viewBoxH = 800;
-            const scaleX = svgRect.width / viewBoxW;
-            const scaleY = svgRect.height / viewBoxH;
-            
-            for (let i = 0; i < milestones.length; i++) {
-                const progress = milestones[i];
-                const point = svgPathElem.getPointAtLength(progress * pathLength);
-                // convert to SVG coordinates (already relative to viewBox)
-                const cx = point.x;
-                const cy = point.y;
-                
-                // create circle element
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", cx);
-                circle.setAttribute("cy", cy);
-                circle.setAttribute("r", "12");
-                circle.setAttribute("class", "location-marker");
-                circle.setAttribute("data-stop", i);
-                // add a subtle pulse animation via CSS
-                circle.style.filter = "drop-shadow(0 0 6px #ff5e5e)";
-                markersGroup.appendChild(circle);
-                markerCircles.push(circle);
+            // Calculate total route length (in meters) for progress mapping
+            routeLength = 0;
+            for (let i = 1; i < routeLatLngs.length; i++) {
+                routeLength += map.distance(routeLatLngs[i-1], routeLatLngs[i]);
             }
+            
+            // Add red markers for each stop
+            locations.forEach((loc, idx) => {
+                const marker = L.circleMarker([loc.lat, loc.lng], {
+                    radius: 8,
+                    fillColor: '#ff3a3a',
+                    color: '#ffc107',
+                    weight: 2,
+                    fillOpacity: 1,
+                    className: 'stop-marker'
+                }).addTo(map);
+                marker.bindTooltip(loc.name, { permanent: false, direction: 'top' });
+                stopMarkers.push(marker);
+            });
+            
+            // Create traveler marker (glowing diamond/circle)
+            const travelerIcon = L.divIcon({
+                className: 'traveler-marker',
+                iconSize: [24, 24],
+                html: '<div style="width:100%;height:100%;background:#ffde9c;border-radius:50%;box-shadow:0 0 15px #ffb347;"></div>'
+            });
+            travelerMarker = L.marker(routeLatLngs[0], { icon: travelerIcon }).addTo(map);
+            
+            // Fit bounds to show full route
+            map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
         }
-
-        // Update traveler (diamond) position and rotation
+        
+        // Get point along polyline by fraction (0 to 1) using leaflet geometryutil
+        function getPointAtFraction(fraction) {
+            if (!polyline || routeLatLngs.length < 2) return routeLatLngs[0];
+            const totalDist = routeLength;
+            const targetDist = fraction * totalDist;
+            let accumulated = 0;
+            for (let i = 1; i < routeLatLngs.length; i++) {
+                const segDist = map.distance(routeLatLngs[i-1], routeLatLngs[i]);
+                if (targetDist <= accumulated + segDist) {
+                    const t = (targetDist - accumulated) / segDist;
+                    const lat = routeLatLngs[i-1][0] + (routeLatLngs[i][0] - routeLatLngs[i-1][0]) * t;
+                    const lng = routeLatLngs[i-1][1] + (routeLatLngs[i][1] - routeLatLngs[i-1][1]) * t;
+                    return [lat, lng];
+                }
+                accumulated += segDist;
+            }
+            return routeLatLngs[routeLatLngs.length - 1];
+        }
+        
+        // Update traveler marker position based on scroll progress
         function updateTraveler(progress) {
-            if (!svgPathElem || !pathLength || !svgRect || !containerRect) return;
-            const clamped = Math.min(1, Math.max(0, progress));
-            const point = svgPathElem.getPointAtLength(clamped * pathLength);
-            
-            // Move the traveler group to that point
-            travelerGroup.setAttribute("transform", `translate(${point.x}, ${point.y})`);
-            
-            // Optional: rotation based on path direction
-            let angle = 0;
-            if (clamped < 0.99) {
-                const nextT = Math.min(1, clamped + 0.02);
-                const p1 = svgPathElem.getPointAtLength(clamped * pathLength);
-                const p2 = svgPathElem.getPointAtLength(nextT * pathLength);
-                const dx = p2.x - p1.x;
-                const dy = p2.y - p1.y;
-                angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            } else if (clamped > 0.01) {
-                const prevT = Math.max(0, clamped - 0.02);
-                const p1 = svgPathElem.getPointAtLength(prevT * pathLength);
-                const p2 = svgPathElem.getPointAtLength(clamped * pathLength);
-                const dx = p2.x - p1.x;
-                const dy = p2.y - p1.y;
-                angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            if (!travelerMarker) return;
+            const point = getPointAtFraction(progress);
+            travelerMarker.setLatLng(point);
+            // Optional: pan map smoothly if marker goes near edge
+            if (progress > 0.05 && progress < 0.95) {
+                map.panTo(point, { animate: false, duration: 0.1 });
             }
-            travelerGroup.style.transform = `rotate(${angle + 45}deg)`; // diamond orientation
         }
-
-        // Trigger popups + sound at each stop (robust)
+        
+        // Trigger popup, sound, marker flash
         function checkStopTriggers(progress) {
             for (let i = 0; i < milestones.length; i++) {
                 if (!triggeredStops[i] && progress >= milestones[i]) {
                     triggeredStops[i] = true;
-                    // update popup
                     popupLocationSpan.innerText = locations[i].name;
                     popupTaglineSpan.innerText = locations[i].line;
+                    popupImage.src = locations[i].img;
+                    popupImage.alt = locations[i].name;
                     popupCard.classList.remove('active');
                     void popupCard.offsetWidth;
                     popupCard.classList.add('active');
                     
-                    // play ting sound
                     if (audioCtx && audioCtx.state === 'running') playTing();
                     else if (audioAllowed) playTing();
                     else if (audioCtx && audioCtx.state === 'suspended') {
                         audioCtx.resume().then(() => playTing()).catch(e=>{});
                     }
                     
-                    // optional: flash the corresponding red marker
-                    if (markerCircles[i]) {
-                        markerCircles[i].style.animation = "none";
-                        markerCircles[i].offsetHeight;
-                        markerCircles[i].style.animation = "pulseRed 0.3s ease-in-out 2";
+                    // Flash the corresponding stop marker
+                    if (stopMarkers[i]) {
+                        const marker = stopMarkers[i];
+                        marker.setStyle({ radius: 14, fillColor: '#ff7777' });
+                        setTimeout(() => marker.setStyle({ radius: 8, fillColor: '#ff3a3a' }), 300);
                     }
                 }
             }
         }
-
-        // ---------- SCROLL PROGRESS (faster experience: spacer 200vh) ----------
+        
+        // ---------- SCROLL PROGRESS (200vh spacer) ----------
         function updateScrollProgress() {
             if (!wrapper) return;
             const rect = wrapper.getBoundingClientRect();
@@ -511,38 +436,30 @@
                 progress = scrolled / totalScrollable;
                 progress = Math.min(1, Math.max(0, progress));
             }
-            
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             animationFrameId = requestAnimationFrame(() => {
-                if (pathLength === 0) refreshMeasurements();
                 currentProgress = progress;
                 updateTraveler(currentProgress);
                 checkStopTriggers(currentProgress);
             });
         }
-
-        // Events
+        
         window.addEventListener('scroll', updateScrollProgress);
         window.addEventListener('resize', () => {
-            refreshMeasurements();
+            if (map) map.invalidateSize();
             updateScrollProgress();
         });
-
-        // Initialization
-        function initialize() {
-            refreshMeasurements();  // sets pathLength, svgRect, creates markers
-            updateTraveler(0);
-            triggeredStops.fill(false);
-            popupCard.classList.remove('active');
-            currentProgress = 0;
-            // extra safety: re-run after a short delay for accurate SVG bounding
-            setTimeout(() => {
-                refreshMeasurements();
-                updateTraveler(0);
-            }, 150);
-        }
         
-        // Button action
+        // Initialize map after DOM ready
+        window.addEventListener('load', () => {
+            initMap();
+            // small delay to ensure map bounds stable
+            setTimeout(() => {
+                updateTraveler(0);
+                updateScrollProgress();
+            }, 200);
+        });
+        
         const planBtn = document.getElementById('planRideBtn');
         if (planBtn) {
             planBtn.addEventListener('click', () => {
@@ -550,27 +467,9 @@
             });
         }
         
-        // Add keyframe animation for red marker pulse
-        const styleSheet = document.createElement("style");
-        styleSheet.textContent = `
-            @keyframes pulseRed {
-                0% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
-                50% { r: 18px; fill: #ff7777; stroke-width: 4; }
-                100% { r: 12px; fill: #ff3a3a; stroke-width: 2; }
-            }
-            .location-marker {
-                transition: r 0.1s;
-                cursor: pointer;
-            }
-        `;
-        document.head.appendChild(styleSheet);
-        
         initAudio();
-        initialize();
-        window.addEventListener('load', () => {
-            refreshMeasurements();
-            updateTraveler(currentProgress);
-        });
+        // initial popup not shown until first scroll
+        triggeredStops.fill(false);
     })();
 </script>
 </body>
